@@ -2,18 +2,15 @@
 import asyncio
 from app.live_simulations.domain_model import IChannelFactory, SimulationFactory, SimulationRepository
 from app.live_simulations.infra_async_jobs import AsyncJobRunner
+from app.live_simulations.ws_live_port import WebSocketChannelFactory
+
 
 
 
 class TaskRunner:
     def __init__(self):
-        channel_factory = IChannelFactory()
-        sim_factory = SimulationFactory(channel_factory)
-        self.sim_runner = AsyncJobRunner()
-        self.repository = SimulationRepository(
-            factory = sim_factory, 
-            runner_queue = self.sim_runner)
-    
+        self.sim_runner = None
+        self.repository = None
         self.executor = None
 
     def run(self):
@@ -30,8 +27,14 @@ class TaskRunner:
 
     def init_app(self, app):
         with app.app_context():
-            from app.webapp import executor
-            # from app.webapp import app
+            from app.webapp import executor, socketio
+            channel_factory = WebSocketChannelFactory(socketio)
+            sim_factory = SimulationFactory(channel_factory)
+            self.sim_runner = AsyncJobRunner()
+            self.repository = SimulationRepository(
+                factory = sim_factory, 
+                runner_queue = self.sim_runner)
+
             self.executor = executor
 
     def execute(self):

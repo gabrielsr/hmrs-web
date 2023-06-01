@@ -1,4 +1,5 @@
-from .async_protocol import AsyncJob, AsyncJobAbs, Outcome
+import asyncio
+from .async_protocol import AsyncJob, AsyncJobAbs, Outcome, catch_and_stop_async, catch_and_stop_async
 
 
 class SimulationSpec:
@@ -50,10 +51,11 @@ class LiveSimulation:
     def __init__(self, **kwargs):
         self.my_state = __class__.state()
 
-    def step(self, time, commands):
+    async def step(self, time, commands):
         if self.my_state:
             i = next(self.my_state)
             if i is not None:
+                await asyncio.sleep(0.01)
                 return f'beat {i}, time: {time}', Outcome.running
             else:
                 self.my_state = None
@@ -61,7 +63,7 @@ class LiveSimulation:
         return {}, Outcome.success
 
     def state():
-        for i in range(3):
+        for i in range(12000):
             yield i
         yield None
         return
@@ -90,9 +92,10 @@ class InteractiveWatchableJob(AsyncJobAbs):
         self.channel.send_updates({'end-status': status})
         self.status = 'finished'
 
-    def step(self, time):
+    @catch_and_stop_async
+    async def step(self, time):
         commands = self.channel.receive_commands()
-        updates, status = self.simulation.step(time, commands)
+        updates, status = await self.simulation.step(time, commands)
         self.channel.send_updates({'status': status, 'updates': updates})
         return status
 
@@ -100,7 +103,7 @@ class InteractiveWatchableJob(AsyncJobAbs):
 class SimulationFactory:
 
     def __init__(self, channel_factory: IChannelFactory):
-        self.channel_factory = channel_factory
+        self.channel_factory = channel_factory                                                  
         self.next_id = 1
 
     def build(self, simulation_spec) -> LiveSimulation:

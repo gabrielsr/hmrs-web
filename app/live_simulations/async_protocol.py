@@ -2,10 +2,28 @@ from enum import Enum
 from typing import Protocol
 
 
-class Outcome(Enum):
+class Outcome(str, Enum):
     running = 'running'
     success = 'success'
     failure = 'failure'
+
+
+def catch_and_stop_async(fnc):
+    async def wrapper(*args, **kwargs):
+        try:
+            return await fnc(*args, **kwargs)
+        except Exception as e:
+            print(e)
+            return Outcome.failure
+    return wrapper
+
+def catch_log_and_ignore(fnc):
+    def wrapper(*args, **kwargs):
+        try:
+            return fnc(*args, **kwargs)
+        except Exception as e:
+            print(e)
+    return wrapper
 
 class AsyncJob(Protocol):
 
@@ -26,9 +44,9 @@ class AsyncJob(Protocol):
     def finish(self, end_status):
         pass
 
-    @property
-    def status(self):
-        pass
+    # @property
+    # def status(self):
+    #     pass
 
 class AsyncJobAbs(AsyncJob):
 

@@ -1,8 +1,41 @@
 
+<h1>Simulation{{ sim.id }}</h1>
+<p id="paragraph"> Status: {{ sim.status }} </h1>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.1/socket.io.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/rxjs/7.8.1/rxjs.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@maxgraph/core@0.2.0/dist/maxgraph.min.js"></script>
+
 <script type="text/javascript" charset="utf-8">
-    var socket = io();
-    socket.on('connect', function() {
-        socket.emit('my event', {data: 'I\'m connected!'});
-    });
+    const socket = io();
+    const sim_id = {{ sim.id }}
+    const namespace = `/ws/live_simulations/${sim_id}`
+    
+    const simns = io(namespace);
+    function RxfromIO (namespaceio, eventName) {
+        return rxjs.Observable.create(observer => {
+            namespaceio.on('update', (data) => {
+                observer.next( JSON.parse(data))
+            });
+            return {
+                dispose : namespaceio.close
+            }
+        })
+    }
+
+    /* {# simns.on('connect', function() {
+        simns.emit('command', {data: 'I\'m connected!'});
+        simns.on('update', function(msg) {
+            console.log(msg);
+            socket.emit(`sim:{sim_id}`, {data: 'got it!'});
+        });
+    }); #}*/
+
+    // Stream of connections
+    const updates$ = RxfromIO(simns, 'update')
+    .subscribe(data => {
+        console.log(data);
+    })
+
+
 </script>

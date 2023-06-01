@@ -42,6 +42,15 @@ async def carry_time_regular_job(job: AsyncJob, target_fps=60):
     status = None
     
 
+def catch_exceptions(fnc):
+    async def wrapper(*args, **kwargs):
+        try:
+            return await fnc(*args, **kwargs)
+        except Exception as e:
+            print(e)
+    return wrapper
+
+@catch_exceptions
 async def clock_worker(name, queue):
     clock = Clock(target_fps=60)
     while True:
@@ -52,8 +61,9 @@ async def clock_worker(name, queue):
             status = Outcome.running
             job.start()
             while status not in [Outcome.success, Outcome.failure]:
+                print(f'{name} step')
                 time = await clock.await_singnal()
-                status = job.step(time)
+                status = await job.step(time)
             job.before_finish()
         except Exception as e:
             print(e)

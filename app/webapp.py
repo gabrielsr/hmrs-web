@@ -45,6 +45,8 @@ def create_app():
     app.config['EXECUTOR_TYPE'] = 'thread'
     
     executor.init_app(app)
+    
+    task_runner.init_app(app)
 
     # register flask blueprints
     from .auth import auth_bp
@@ -66,7 +68,6 @@ def create_app():
     from .cli_cmds import seed_cli
     app.cli.add_command(seed_cli)
 
-    task_runner.init_app(app)
 
     return app
 

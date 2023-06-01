@@ -3,8 +3,9 @@ from flask_restx import Resource, fields
 from flask import Blueprint
 from flask_restx import Api
 from flask_socketio import emit
+from app import get_repo
 
-from app.live_simulations.domain_model import SimulationSpec
+from app.live_simulations.domain_model import SimulationRepository, SimulationSpec
 
 from ..webapp import socketio
 
@@ -24,16 +25,13 @@ sim_desc= api.model('Simulation Desc', {
     'ws_url': fields.String(description='Websocket URL when running'),
 })
 
-from ..webapp import task_runner
-repo = task_runner.repository
-
 @ns.route('/')
 class SimulationList(Resource):
     @ns.doc('list_simulations')
     @ns.marshal_list_with(sim_desc)
     def get(self):
         '''List all '''
-        return repo.get_active()
+        return self.get_active()
 
     @ns.doc('create_simulation')
     @ns.expect(sim_spec)
@@ -41,7 +39,7 @@ class SimulationList(Resource):
     def post(self):
         '''Create a new simulation'''
         sim_spec_inst = SimulationSpec(api.payload)
-        sim =  repo.create(sim_spec_inst)
+        sim =  get_repo().create(sim_spec_inst)
         return sim
 
 @ns.route('/<int:id>')
@@ -51,7 +49,7 @@ class Simulation(Resource):
     @ns.marshal_with(sim_desc)
     @ns.doc(params={'id': 'ID of a simulation'})
     def get(self, id):
-        return repo.get(id)
+        return get_repo().get(id)
 
 
 
