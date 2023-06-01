@@ -1,0 +1,39 @@
+{% macro reviewsMacro(movie_id) -%}
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+<div id="app">
+  <li v-for="review in reviews">
+    {% raw %}{{ review.moviegoer_name }} - Potatoes:{{ review.potatoes }} {% endraw %}
+  </li>
+</div>
+
+<script>
+  const { createApp } = Vue
+  const movie_id = {{ movie_id }}
+
+  createApp({
+    data() {
+      return {
+        reviews: [],
+        reviews2: []
+      }
+    },
+    async mounted () {
+      url = `/api/v1/movies/${movie_id}/reviews`
+      /* axios
+        .get(url)
+        .then(response => (this.reviews = response.data)) */
+      
+      try {
+	      const res = await axios.get(url);
+        this.reviews2 = res.data;
+      } catch (error) {
+	      // Handle errors
+        console.log(error);
+      }
+    }
+    //, delimiters: ['[[', ']]']
+  }).mount('#app')
+</script>
+{%- endmacro %}
