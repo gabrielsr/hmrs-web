@@ -1,16 +1,4 @@
-
-class AsyncJob:
-    def __init__(self, job):
-        self.job = job
-        self.status = 'created'
-
-    def start(self):
-        self.job.on_start()
-        self.status = 'running'
-
-    def step(self, time):
-        yield from self.job.step(time)
-        return 'finished'
+from .async_protocol import AsyncJob, AsyncJobAbs, Outcome
 
 
 class SimulationSpec:
@@ -18,13 +6,18 @@ class SimulationSpec:
     def __init__(self, map):
         self.map = map
 
+
 class SimulationDescriptor:
-    
-    def __init__(self, id:int, status, job, **kwargs):
+
+    def __init__(self, id: int, job: AsyncJob, **kwargs):
         self.id = id
-        self.status = status
         self.job = job
         self.info = kwargs
+
+    @property
+    def status(self):
+        return self.job.status
+
 
 class IChannel:
     def __init__(self, id):
@@ -44,13 +37,13 @@ class IChannel:
         """
         return []
 
+
 class IChannelFactory:
     def __init__(self):
         pass
 
     def build(self, simulation_id) -> IChannel:
         return IChannel(simulation_id)
-
 
 
 class LiveSimulation:
@@ -61,11 +54,11 @@ class LiveSimulation:
         if self.my_state:
             i = next(self.my_state)
             if i is not None:
-                return f'beat {i}, time: {time}', 'running'
+                return f'beat {i}, time: {time}', Outcome.running
             else:
                 self.my_state = None
-        
-        return {}, 'finished'
+
+        return {}, Outcome.success
 
     def state():
         for i in range(3):
@@ -74,23 +67,28 @@ class LiveSimulation:
         return
 
 
-
-class InteractiveWatchableJob(AsyncJob):
+class InteractiveWatchableJob(AsyncJobAbs):
     """" 
+        LiveSimulation AsyncJob Adapter
         A long running process that receives commands and generate
         updates until it concludes.
+
+        @protocol AsyncJob
     """
-    
-    def __init__(self, simulation: LiveSimulation, 
-                 channel: IChannel ):
+
+    def __init__(self, simulation: LiveSimulation,
+                 channel: IChannel):
         self.simulation = simulation
         self.channel = channel
+        self.status = 'pending'
 
-    def on_start(self):
+    def start(self):
         self.channel.send_updates({'status': 'started'})
+        self.status = 'started'
 
-    def on_finish(self, status):
+    def finish(self, status):
         self.channel.send_updates({'end-status': status})
+        self.status = 'finished'
 
     def step(self, time):
         commands = self.channel.receive_commands()
@@ -106,19 +104,16 @@ class SimulationFactory:
         self.next_id = 1
 
     def build(self, simulation_spec) -> LiveSimulation:
-        id= self.get_next_id()
-        sim = LiveSimulation()
+        id = self.get_next_id()
         channel = self.channel_factory.build(id)
         sim_desc = SimulationDescriptor(
             id=id,
-            status="created",
-            # title=simulation_spec.title,
-            job = InteractiveWatchableJob(
-            LiveSimulation(), channel)
+            job=InteractiveWatchableJob(
+                LiveSimulation(),
+                channel)
         )
-
         return sim_desc
-    
+
     def get_next_id(self):
         id = self.next_id
         self.next_id += 1
@@ -128,31 +123,27 @@ class SimulationFactory:
 class SimulationRepository:
 
     def __init__(self, factory, runner_queue):
-        self.factory = factory
+        self.factory: SimulationFactory = factory
         self.simulations: dict[int, SimulationDescriptor] = {}
         self.runner_queue = runner_queue
-        
 
     def create(self, simulation_spec, owner=None):
         sim_desc = self.factory.build(simulation_spec)
-        sim_desc.status = 'pending'
-        self.simulations[id] = sim_desc
+        self.simulations[sim_desc.id] = sim_desc
         self.runner_queue.put(sim_desc.job)
         return sim_desc
-    
-    def get(self, id):
+
+    def get(self, id) -> InteractiveWatchableJob:
         return self.simulations[id]
 
     def get_active(self) -> list[InteractiveWatchableJob]:
         return self.simulations.values()
-    
+
     def get_pending(self) -> list[InteractiveWatchableJob]:
         all = []
         while self.pending.qsize() > 0:
             all.append(self.pending.get())
         return all
-    
-    def kill_idle_simulations(self):
+
+    def clean_idle_simulations(self):
         pass
-
-

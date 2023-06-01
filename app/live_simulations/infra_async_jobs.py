@@ -1,6 +1,7 @@
 import asyncio
 import queue
 import time
+from app.live_simulations.async_protocol import Outcome
 
 from app.live_simulations.domain_model import AsyncJob, IChannel, IChannelFactory
 
@@ -41,26 +42,25 @@ async def carry_time_regular_job(job: AsyncJob, target_fps=60):
     status = None
     
 
-
-
-async def worker(name, queue):
+async def clock_worker(name, queue):
     clock = Clock(target_fps=60)
     while True:
         status = None
         job: AsyncJob = await queue.get()
         clock.reset()
         try:
-            status = 'running'
-            job.on_start()
-            while status != 'finished':
+            status = Outcome.running
+            job.start()
+            while status not in [Outcome.success, Outcome.failure]:
                 time = await clock.await_singnal()
                 status = job.step(time)
+            job.before_finish()
         except Exception as e:
             print(e)
             status = 'error'
         finally:
             queue.task_done()
-            job.on_finish(status=status)
+            job.finish(status=status)
         print(f'{name} done a task')
 
 class ChannelFactory(IChannelFactory):
@@ -80,7 +80,7 @@ class AsyncJobRunner:
         t = asyncio.create_task(handle_inbox(self))
         tasks = [t]
         for i in range(num_workers):
-            task = asyncio.create_task(worker(f'worker-{i}', self.queue))
+            task = asyncio.create_task(clock_worker(f'worker-{i}', self.queue))
             tasks.append(task)
             
         results = await asyncio.gather(*tasks)
@@ -105,6 +105,9 @@ async def beat():
         await asyncio.sleep(1)
 
 async def handle_inbox(async_job_runner: AsyncJobRunner):
+    """
+    This function is responsible for moving jobs from the inbox to the queue.
+    """
     while True:
         try:
             job = async_job_runner.inbox.get_nowait()

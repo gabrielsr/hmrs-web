@@ -1,8 +1,13 @@
 from flask import Blueprint, render_template, redirect, url_for, flash
 from flask_login import login_required
 from app.helpers.standard_paths import get_standard_template_paths
+from app.live_simulations.domain_model import LiveSimulation
 
 from ..webapp import db
+
+
+from ..webapp import task_runner
+repo = task_runner.repository
 
 
 bp_name = "simulations"
@@ -39,8 +44,11 @@ def show(id: int):
     Show page.
     :return: The response.
     """
+    sim: LiveSimulation = repo.get(id)
+
+
     # sim = sim_repository.get(id)
-    return render_template(tmpl.show) #, entity=sim, **properties)
+    return render_template(tmpl.show, sim = sim) #, entity=sim, **properties)
 
 
 
