@@ -22,10 +22,3 @@ def seed_users():
 
     db.session.commit()
 
-
-@seed_cli.command("all")
-def seed_all():
-    "Add seed data to the database."
-    # seed_movies()
-    # seed_users()
-    # seed_reviews()

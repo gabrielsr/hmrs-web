@@ -1,6 +1,6 @@
 
 import asyncio
-from app.live_simulations.domain_model import IChannelFactory, SimulationFactory, SimulationRepository
+from app.live_simulations.domains.domain_model import IChannelFactory, SimulationFactory, SimulationRepository
 from app.live_simulations.infra_async_jobs import AsyncJobRunner
 from app.live_simulations.ws_live_port import WebSocketChannelFactory
 

@@ -3,7 +3,7 @@
 from typing import Tuple
 from app.helpers.get_fields import get_from_json_str
 
-from app.models.profile import Profile
+from ..models import Profile
 from .principal import Principal
 
 from ..webapp import db, bcrypt

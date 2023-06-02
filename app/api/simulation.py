@@ -5,7 +5,7 @@ from flask_restx import Api
 from flask_socketio import emit
 from app import get_repo
 
-from app.live_simulations.domain_model import SimulationRepository, SimulationSpec
+from app.live_simulations.domains.domain_model import SimulationRepository, SimulationSpec
 
 from ..webapp import socketio
 

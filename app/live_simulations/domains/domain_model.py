@@ -1,5 +1,5 @@
 import asyncio
-from .async_protocol import AsyncJob, AsyncJobAbs, Outcome, catch_and_stop_async, catch_and_stop_async
+from ..async_protocol import AsyncJob, AsyncJobAbs, Outcome, catch_and_stop_async, catch_and_stop_async
 
 
 class SimulationSpec:

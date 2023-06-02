@@ -3,7 +3,7 @@ import queue
 import time
 from app.live_simulations.async_protocol import Outcome
 
-from app.live_simulations.domain_model import AsyncJob, IChannel, IChannelFactory
+from app.live_simulations.domains.domain_model import AsyncJob, IChannel, IChannelFactory
 
 
 

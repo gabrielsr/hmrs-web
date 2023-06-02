@@ -1,4 +1,4 @@
-from app.live_simulations.domain_model import SimulationRepository
+from app.live_simulations.domains.domain_model import SimulationRepository
 
 
 __repo = None

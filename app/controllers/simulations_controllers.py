@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash
 from flask_login import login_required
 from app import get_repo
 from app.helpers.standard_paths import get_standard_template_paths
-from app.live_simulations.domain_model import LiveSimulation
+from app.live_simulations.domains.domain_model import LiveSimulation
 
 from ..webapp import db
 
