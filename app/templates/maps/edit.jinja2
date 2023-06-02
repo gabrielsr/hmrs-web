@@ -1,0 +1,14 @@
+{% extends 'base.jinja2' %}
+{% from 'bootstrap5/form.html' import render_form %}
+
+{% block header %}
+<h1>{% block title %}Edit{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+{%  if form %}
+    {{ render_form(form) }}
+{%  elif uploadform %}
+    {{ render_form(uploadform) }}
+{%  endif %}
+{% endblock %}
